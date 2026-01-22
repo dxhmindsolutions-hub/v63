@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Despensa</title>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f2f2f7}
+
+/* ===== HEADER ===== */
+header{background:#fff;padding:12px;border-bottom:1px solid #ddd}
+.top{display:flex;align-items:center;gap:10px}
+.menu{font-size:22px;cursor:pointer}
+.addMain{margin-left:auto;font-size:16px;cursor:pointer;font-weight:600}
+h1{margin:0;font-size:20px}
+.search input{width:100%;padding:10px;font-size:16px;border:none;border-radius:10px;background:#e5e5ea}
+
+/* ===== DRAWER ===== */
+#drawer{position:fixed;top:0;bottom:0;left:0;width:260px;background:#fff;transform:translateX(-100%);transition:.3s;padding:16px;z-index:20}
+#drawer.open{transform:translateX(0)}
+#drawer button{width:100%;padding:12px;margin-bottom:8px;border:1px solid #000;border-radius:12px;background:#fff;font-weight:600}
+#drawer button.active{background:#000;color:#fff}
+
+/* ===== BOTÓN AÑADIR ARTÍCULO ===== */
+#addItemBtn{display:none;margin:12px;width:calc(100% - 24px);padding:12px;border:none;border-radius:12px;background:#43a047;color:#fff;font-weight:600;font-size:16px;cursor:pointer}
+
+/* ===== LISTA ===== */
+main{padding:12px;padding-bottom:260px}
+.item{background:#fff;border-radius:12px;padding:12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.item>div{display:flex}
+.item button{width:36px;height:36px;border:none;border-radius:10px;font-size:18px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.add{background:#43a047;color:#fff}
+.del{background:#ff3b30;color:#fff}
+
+/* ===== BOTONES CANTIDAD / UNIDAD ===== */
+.btns.qty{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:12px;}
+.btns.qty button{
+  width:72px;
+  height:36px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:12px;
+  border:1px solid #000;
+  background:#fff;
+  color:#000;
+  font-weight:600;
+  cursor:pointer;
+  font-size:14px;
+}
+.btns.unit{
+  display:flex;
+  gap:8px;
+  margin-bottom:12px;
+}
+.btns.unit button{
+  flex:1;
+  height:44px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:12px;
+  border:1px solid #000;
+  background:#fff;
+  color:#000;
+  font-weight:600;
+  cursor:pointer;
+  font-size:14px;
+}
+.btns button.active{
+  background:#000;
+  color:#fff;
+}
+
+/* ===== BOTONES MODAL PRINCIPAL ===== */
+.modal-actions{display:flex;gap:8px;margin-top:12px;}
+.modal-actions .btn-green{flex:2;}
+.modal-actions .btn-red{flex:1;}
+
+/* ===== TICKET ===== */
+#ticket-panel{position:fixed;bottom:20px;left:12px;right:12px;background:#fff;border-radius:14px;padding:12px}
+#ticket-panel ul{list-style:none;padding:0;margin:0}
+#ticket-panel li{display:flex;justify-content:space-between;margin-bottom:4px}
+.ticket-actions{display:flex;gap:8px;margin-top:8px}
+.ticket-actions button{flex:1;border:none;border-radius:10px;padding:12px;font-weight:600;background:#fff;color:#000;cursor:pointer}
+
+/* ===== MODALES ===== */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:30}
+.modal .box{background:#fff;border-radius:16px;padding:20px;width:90%;max-width:360px}
+.modal h3{margin:0 0 12px;text-align:center}
+.modal p{margin:14px 0 6px;font-weight:600}
+
+/* ===== BOTONES VERDE / ROJO ===== */
+.btn-green{background:#43a047;color:#fff;border:none;border-radius:12px;padding:12px;font-weight:600;cursor:pointer}
+.btn-red{background:#ff3b30;color:#fff;border:none;border-radius:12px;padding:12px;font-weight:600;cursor:pointer}
+</style>
+</head>
+
+<body>
+
+<div id="drawer"></div>
+
+<header>
+  <div class="top">
+    <div class="menu" onclick="toggleDrawer()">≡</div>
+    <h1>Despensa</h1>
+    <div class="addMain" id="editBtn" onclick="toggleEditMode()">✏️ Editar</div>
+  </div>
+  <div class="search">
+    <input id="search" placeholder="Buscar..." oninput="render()">
+  </div>
+</header>
+
+<button id="addItemBtn" onclick="showAddItem()">➕ Añadir artículo</button>
+
+<main id="list"></main>
+
+<div id="ticket-panel">
+  <strong>🧾 Ticket</strong>
+  <ul id="ticketList"></ul>
+  <div class="ticket-actions">
+    <button onclick="printTicket()">🖨️ Imprimir</button>
+    <button onclick="sendWhatsApp()">📲 WhatsApp</button>
+    <button onclick="resetTicket()">🔄 Nuevo</button>
+  </div>
+</div>
+
+<div id="confirmModal" class="modal">
+  <div class="box">
+    <p id="confirmText"></p>
+    <div class="modal-actions">
+      <button id="add" class="btn-green" onclick="confirmDelete()">Aceptar</button>
+      <button id="cancel" class="btn-red" onclick="closeConfirm()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="print-ticket"></div>
+
+<script>
+// ===== ELEMENTOS DOM =====
+const drawer = document.getElementById("drawer");
+const search = document.getElementById("search");
+const list = document.getElementById("list");
+const ticketList = document.getElementById("ticketList");
+const confirmModal = document.getElementById("confirmModal");
+const confirmText = document.getElementById("confirmText");
+const addItemBtn = document.getElementById("addItemBtn");
+const editBtn = document.getElementById("editBtn");
+
+// ===== MODO EDICIÓN =====
+let editMode = false;
+function toggleEditMode(){ editMode=!editMode; render(); }
+
+// ===== CATEGORÍAS =====
+const categories = [
+"Aguas y refrescos","Cerveza, vinos y licores","Café y té","Frutas y verduras",
+"Lácteos y huevos","Carne","Pescado","Limpieza","Congelados","Asiático","Otros"
+];
+
+let activeCat = categories[0];
+let items = JSON.parse(localStorage.items||"[]");
+let cart = JSON.parse(localStorage.cart||"[]");
+
+let deleteIndex = null;
+let deleteType = null;
+
+// ===== DRAWER =====
+function toggleDrawer(){ drawer.classList.toggle("open"); }
+function renderDrawer(){
+  drawer.innerHTML = categories.map(c=>`<button class="${c===activeCat?"active":""}" onclick="activeCat='${c}';toggleDrawer();render()">${c}</button>`).join("");
+}
+
+// ===== RENDER PRINCIPAL =====
+function render(){
+  if(editMode){ addItemBtn.style.display="block"; editBtn.textContent="↩️ Volver"; }
+  else{ addItemBtn.style.display="none"; editBtn.textContent="✏️ Editar"; }
+  renderDrawer();
+  const q = search.value.toLowerCase();
+  list.innerHTML = items.filter(i=>q?i.name.toLowerCase().includes(q):i.cat===activeCat)
+    .map((i,idx)=>`<div class="item"><div><strong>${i.name}</strong>${q?`<div style="font-size:12px;opacity:.6">${i.cat}</div>`:""}</div><div>${editMode?`<button class="del" onclick="askDeleteItem(${idx})">✕</button>`:`<button class="add" onclick="showQtyModal('${i.name}')">+</button>`}</div></div>`).join("");
+  renderTicket();
+  localStorage.items = JSON.stringify(items);
+  localStorage.cart = JSON.stringify(cart);
+}
+
+// ===== NUEVO ARTÍCULO =====
+function showAddItem(){
+  const m = document.createElement("div");
+  m.className="modal"; m.style.display="flex";
+  m.innerHTML = `<div class="box"><h3>Nuevo artículo</h3><input id="iname" placeholder="Nombre"><select id="icat">${categories.map(c=>`<option>${c}</option>`).join("")}</select><div class="modal-actions"><button id="save" class="btn-green">Guardar</button><button id="cancel" class="btn-red">Cancelar</button></div></div>`;
+  document.body.appendChild(m);
+  m.querySelector("#cancel").onclick = ()=>m.remove();
+  m.querySelector("#save").onclick = ()=>{
+    const n = m.querySelector("#iname").value.trim();
+    const c = m.querySelector("#icat").value;
+    if(n){ items.push({name:n,cat:c}); m.remove(); render(); }
+  };
+}
+
+// ===== MODAL CANTIDAD / UNIDAD =====
+function showQtyModal(name){
+  let qty=1; let unit="UNIDAD";
+  const m=document.createElement("div");
+  m.className="modal"; m.style.display="flex";
+  m.innerHTML=`<div class="box"><h3>${name}</h3>
+  <p>Cantidad</p><div class="btns qty">${[1,2,3,4,5,6,7,8,9,10].map(n=>`<button>${n}</button>`).join("")}</div>
+  <p>Unidad</p><div class="btns unit"><button class="active">UNIDAD</button><button>KG</button><button>CAJA</button></div>
+  <div class="modal-actions"><button id="add" class="btn-green">Añadir</button><button id="cancel" class="btn-red">Cancelar</button></div></div>`;
+  document.body.appendChild(m);
+
+  m.querySelectorAll(".qty button").forEach(b=>b.onclick=()=>{
+    m.querySelectorAll(".qty button").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active"); qty=+b.textContent;
+  });
+  m.querySelectorAll(".unit button").forEach(b=>b.onclick=()=>{
+    m.querySelectorAll(".unit button").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active"); unit=b.textContent;
+  });
+
+  m.querySelector("#cancel").onclick = ()=>m.remove();
+  m.querySelector("#add").onclick = ()=>{
+    const found = cart.find(c=>c.name===name&&c.unit===unit);
+    if(found) found.qty+=qty;
+    else cart.push({name,qty,unit});
+    m.remove(); render();
+  };
+}
+
+// ===== TICKET =====
+function renderTicket(){
+  ticketList.innerHTML = cart.map((c,i)=>`<li>${c.name} - ${c.qty} ${c.unit} <button class="del" onclick="askDeleteTicket(${i})">✕</button></li>`).join("");
+}
+
+// ===== ELIMINAR =====
+function askDeleteItem(i){ deleteType="item"; deleteIndex=i; confirmText.textContent=`¿Eliminar ${items[i].name}?`; confirmModal.style.display="flex"; }
+function askDeleteTicket(i){ deleteType="ticket"; deleteIndex=i; confirmText.textContent=`¿Eliminar ${cart[i].name}?`; confirmModal.style.display="flex"; }
+function confirmDelete(){ if(deleteType==="item") items.splice(deleteIndex,1); if(deleteType==="ticket") cart.splice(deleteIndex,1); closeConfirm(); render(); }
+function closeConfirm(){ confirmModal.style.display="none"; }
+function resetTicket(){ cart=[]; render(); }
+
+// ===== WHATSAPP =====
+function buildWhatsAppText(){
+  let txt="🧾 *PEDIDO*\n\n";
+  categories.forEach(cat=>{
+    const lines = cart.filter(c=>{ const it = items.find(i=>i.name===c.name); return it && it.cat===cat; });
+    if(lines.length){ txt+=cat.toUpperCase()+"\n"; lines.forEach(l=>{ txt+=`- ${l.name}: ${l.qty} ${l.unit}\n`; }); txt+="\n"; }
+  });
+  return txt.trim();
+}
+
+function previewWhatsApp(){
+  const m=document.createElement("div"); m.className="modal"; m.style.display="flex";
+  // Invertimos botones: Enviar grande verde, Cancelar pequeño rojo
+  m.innerHTML=`<div class="box"><h3>Vista previa WhatsApp</h3>
+  <textarea style="width:100%;height:200px">${buildWhatsAppText()}</textarea>
+  <div class="modal-actions">
+    <button id="send" class="btn-green">Enviar</button>
+    <button id="cancel" class="btn-red">Cancelar</button>
+  </div></div>`;
+  document.body.appendChild(m);
+  m.querySelector("#cancel").onclick=()=>m.remove();
+  m.querySelector("#send").onclick=()=>{
+    const txt=m.querySelector("textarea").value;
+    window.open("https://wa.me/?text="+encodeURIComponent(txt));
+    m.remove();
+  };
+}
+function sendWhatsApp(){ previewWhatsApp(); }
+
+// ===== DATOS INICIALES =====
+if(items.length===0){ items=[{name:"Coca Cola",cat:"Aguas y refrescos"},{name:"Manzana",cat:"Frutas y verduras"}]; }
+
+render();
+</script>
+
+</body>
+</html>
