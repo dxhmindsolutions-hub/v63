@@ -55,6 +55,7 @@ function renderDrawer(){
 /* ===== RENDER PRINCIPAL ===== */
 function render(){
 
+  /* BOTONES SEGÚN MODO */
   if(editMode){
     addItemBtn.style.display = "block";
     editBtn.textContent = "↩️ Volver";
@@ -108,8 +109,8 @@ function showAddItem(){
         ${categories.map(c => `<option>${c}</option>`).join("")}
       </select>
       <div>
-        <button id="save" class="btn-green">Guardar</button>
-        <button id="cancel" class="btn-red">Cancelar</button>
+        <button id="save">Guardar</button>
+        <button id="cancel">Cancelar</button>
       </div>
     </div>
   `;
@@ -152,8 +153,8 @@ function showQtyModal(name){
       </div>
 
       <div>
-        <button id="add" class="btn-green">Añadir</button>
-        <button id="cancel" class="btn-red">Cancelar</button>
+        <button id="add">Añadir</button>
+        <button id="cancel">Cancelar</button>
       </div>
     </div>
   `;
@@ -254,8 +255,8 @@ function previewWhatsApp(){
       <h3>Vista previa WhatsApp</h3>
       <textarea style="width:100%;height:200px">${buildWhatsAppText()}</textarea>
       <div>
-        <button id="cancel" class="btn-red">Cancelar</button>
-        <button id="send" class="btn-green">Enviar</button>
+        <button id="cancel">Cancelar</button>
+        <button id="send">Enviar</button>
       </div>
     </div>
   `;
@@ -271,6 +272,35 @@ function previewWhatsApp(){
 
 function sendWhatsApp(){
   previewWhatsApp();
+}
+
+/* ===== IMPRIMIR ===== */
+function printTicket(){
+  let html = `
+    <h2>🧾 Ticket</h2>
+    <ul>
+      ${cart.map(c => `<li>${c.name} - ${c.qty} ${c.unit}</li>`).join("")}
+    </ul>
+    <p>Total artículos: ${cart.length}</p>
+  `;
+
+  const w = window.open("", "_blank");
+  w.document.write(`
+    <html>
+      <head>
+        <title>Ticket</title>
+        <style>
+          body{font-family:sans-serif;padding:20px}
+          h2{text-align:center}
+          ul{list-style:none;padding:0}
+          li{margin-bottom:6px}
+        </style>
+      </head>
+      <body>${html}</body>
+    </html>
+  `);
+  w.document.close();
+  w.print();
 }
 
 /* ===== DATOS INICIALES ===== */
