@@ -239,6 +239,35 @@ function confirmDelete(){
 function closeConfirm(){
   confirmModal.style.display = "none";
 }
+/* ===== IMPRIMIR TICKET ===== */
+function printTicket(){
+
+  let html = `
+    <div id="print-ticket">
+      <h2 style="text-align:center">PEDIDO</h2>
+      <p style="text-align:center">${new Date().toLocaleString()}</p>
+      <hr>
+  `;
+
+  cart.forEach(c => {
+    html += `
+      <div style="display:flex;justify-content:space-between">
+        <span>${c.name}</span>
+        <span>${c.qty} ${c.unit}</span>
+      </div>
+    `;
+  });
+
+  html += `
+      <hr>
+      <p style="text-align:center">Gracias por su pedido</p>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML("beforeend", html);
+  window.print();
+  document.getElementById("print-ticket").remove();
+}
 
 /* ===== WHATSAPP ===== */
 function buildWhatsAppText(){
